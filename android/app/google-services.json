@@ -1,0 +1,29 @@
+{
+"project_info": {
+"project_number": "1031733875770",
+"project_id": "thos-app-ad99f",
+"storage_bucket": "thos-app-ad99f.firebasestorage.app"
+},
+"client": [
+{
+"client_info": {
+"mobilesdk_app_id": "1:1031733875770:android:7e0c3627dafca265b7d103",
+"android_client_info": {
+"package_name": "com.THOS.app"
+}
+},
+"oauth_client": [],
+"api_key": [
+{
+"current_key": "AIzaSyCxtHSiGKRIpxjX82UZV3PFmZ3CQF-xBCY"
+}
+],
+"services": {
+"appinvite_service": {
+"other_platform_oauth_client": []
+}
+}
+}
+],
+"configuration_version": "1"
+}
