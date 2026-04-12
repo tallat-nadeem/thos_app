@@ -7,6 +7,8 @@ import '../widgets/product_image.dart';
 import 'product_detail_screen.dart';
 
 class ProductsScreen extends StatefulWidget {
+  const ProductsScreen({super.key});
+
   @override
   _ProductsScreenState createState() => _ProductsScreenState();
 }
@@ -37,9 +39,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
       products.clear();
     }
 
-    setState(() {
-      isLoading = true;
-    });
+    setState(() => isLoading = true);
 
     final newProducts =
         await ProductService.fetchProducts(page, categoryId: categoryId);
@@ -53,9 +53,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
 
   Future<void> fetchCategories() async {
     final data = await CategoryService.fetchCategories();
-    setState(() {
-      categories = data;
-    });
+    setState(() => categories = data);
   }
 
   void _scrollListener() {
@@ -67,9 +65,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
   }
 
   void onCategorySelected(int? id) {
-    setState(() {
-      selectedCategoryId = id;
-    });
+    setState(() => selectedCategoryId = id);
     fetchProducts(categoryId: id, reset: true);
   }
 
@@ -84,71 +80,104 @@ class _ProductsScreenState extends State<ProductsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Column(
-          children: const [
-            Text("THOS"),
-            Text("by TALLAT HERBS", style: TextStyle(fontSize: 12)),
-            Text("🌐 www.tallatherbs.com", style: TextStyle(fontSize: 10)),
-          ],
+    return Column(
+      children: [
+        // 🔹 Categories
+        SizedBox(
+          height: 60,
+          child: categories.isEmpty
+              ? const Center(child: CircularProgressIndicator())
+              : ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: categories.length + 1,
+                  itemBuilder: (context, index) {
+                    if (index == 0) {
+                      return categoryItem("All", null);
+                    }
+                    final cat = categories[index - 1];
+                    return categoryItem(cat.name, cat.id);
+                  },
+                ),
         ),
-        centerTitle: true,
-      ),
-      body: Column(
-        children: [
-          SizedBox(
-            height: 60,
-            child: categories.isEmpty
-                ? Center(child: CircularProgressIndicator())
-                : ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: categories.length + 1,
-                    itemBuilder: (context, index) {
-                      if (index == 0) {
-                        return categoryItem("All", null);
-                      }
 
-                      final cat = categories[index - 1];
-                      return categoryItem(cat.name, cat.id);
-                    },
+        // 🔹 Products Grid
+        Expanded(
+          child: products.isEmpty
+              ? const Center(child: CircularProgressIndicator())
+              : GridView.builder(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.all(10),
+                  itemCount: products.length,
+                  gridDelegate:
+                      const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2, // 🔥 2 boxes per row
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                    childAspectRatio: 0.7, // 🔥 height control
                   ),
-          ),
+                  itemBuilder: (context, index) {
+                    final product = products[index];
 
-          Expanded(
-            child: ListView.builder(
-              controller: _scrollController,
-              itemCount: products.length + 1,
-              itemBuilder: (context, index) {
-                if (index < products.length) {
-                  final product = products[index];
+                    return GestureDetector(
+                      onTap: () => openProduct(product),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              blurRadius: 5,
+                              color: Colors.grey.withOpacity(0.2),
+                            )
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // 🖼️ Image
+                            Expanded(
+                              child: ClipRRect(
+                                borderRadius: const BorderRadius.vertical(
+                                    top: Radius.circular(12)),
+                                child: ProductImage(
+                                  imageUrl: product.image,
+                                ),
+                              ),
+                            ),
 
-                  return GestureDetector(
-                    onTap: () => openProduct(product),
-                    child: Card(
-                      margin: EdgeInsets.all(10),
-                      child: ListTile(
-                        leading: ProductImage(imageUrl: product.image),
-                        title: Text(product.name),
-                        subtitle: Text("Rs ${product.price}"),
+                            // 📦 Name
+                            Padding(
+                              padding: const EdgeInsets.all(6),
+                              child: Text(
+                                product.name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold),
+                              ),
+                            ),
+
+                            // 💰 Price
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 6),
+                              child: Text(
+                                "Rs ${product.price}",
+                                style: const TextStyle(
+                                    color: Colors.green,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                            ),
+
+                            const SizedBox(height: 6),
+                          ],
+                        ),
                       ),
-                    ),
-                  );
-                } else {
-                  return Padding(
-                    padding: EdgeInsets.all(20),
-                    child: Center(
-                      child: isLoading
-                          ? CircularProgressIndicator()
-                          : SizedBox(),
-                    ),
-                  );
-                }
-              },
-            ),
-          ),
-        ],
-      ),
+                    );
+                  },
+                ),
+        ),
+      ],
     );
   }
 
@@ -158,8 +187,8 @@ class _ProductsScreenState extends State<ProductsScreen> {
     return GestureDetector(
       onTap: () => onCategorySelected(id),
       child: Container(
-        margin: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-        padding: EdgeInsets.symmetric(horizontal: 12),
+        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
           color: isSelected ? Colors.green : Colors.grey[200],
           borderRadius: BorderRadius.circular(20),
