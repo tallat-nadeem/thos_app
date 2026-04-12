@@ -1,96 +1,81 @@
 import 'package:flutter/material.dart';
 import '../services/cart_service.dart';
-import '../widgets/product_image.dart';
+import '../models/product_model.dart';
 
 class CartScreen extends StatefulWidget {
+  const CartScreen({super.key});
+
   @override
-  _CartScreenState createState() => _CartScreenState();
+  State<CartScreen> createState() => _CartScreenState();
 }
 
 class _CartScreenState extends State<CartScreen> {
-  void refresh() {
-    setState(() {});
-  }
 
   @override
   Widget build(BuildContext context) {
-    final cart = CartService.getCart();
+    List<Product> items = CartService.getCartItems();
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text("Cart"),
-      ),
-      body: cart.isEmpty
-          ? Center(child: Text("Cart is Empty"))
+      appBar: AppBar(title: const Text("Your Cart")),
+
+      body: items.isEmpty
+          ? const Center(child: Text("Cart is Empty"))
           : Column(
               children: [
+
                 Expanded(
                   child: ListView.builder(
-                    itemCount: cart.length,
+                    itemCount: items.length,
                     itemBuilder: (context, index) {
-                      final item = cart[index];
+                      final item = items[index];
 
-                      return Card(
-                        margin: EdgeInsets.all(10),
-                        child: ListTile(
-                          leading: ProductImage(imageUrl: item.image),
-                          title: Text(item.name),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text("Rs ${item.price}"),
-                              SizedBox(height: 5),
-
-                              Row(
-                                children: [
-                                  IconButton(
-                                    icon: Icon(Icons.remove_circle,
-                                        color: Colors.red),
-                                    onPressed: () {
-                                      CartService.decreaseQty(item.id);
-                                      refresh();
-                                    },
-                                  ),
-                                  Text("${item.quantity}"),
-                                  IconButton(
-                                    icon: Icon(Icons.add_circle,
-                                        color: Colors.green),
-                                    onPressed: () {
-                                      CartService.increaseQty(item.id);
-                                      refresh();
-                                    },
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
+                      return ListTile(
+                        leading: Image.network(item.image, width: 50),
+                        title: Text(item.name),
+                        subtitle: Text("Rs ${item.price}"),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.delete),
+                          onPressed: () {
+                            CartService.removeFromCart(item);
+                            setState(() {});
+                          },
                         ),
                       );
                     },
                   ),
                 ),
 
-                Container(
-                  padding: EdgeInsets.all(15),
-                  color: Colors.grey[200],
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        "Total:",
-                        style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      Text(
-                        "Rs ${CartService.getTotal().toStringAsFixed(0)}",
-                        style: TextStyle(
-                            fontSize: 18,
-                            color: Colors.green,
-                            fontWeight: FontWeight.bold),
-                      ),
-                    ],
+                // 💰 TOTAL
+                Padding(
+                  padding: const EdgeInsets.all(10),
+                  child: Text(
+                    "Total: Rs ${CartService.getTotalPrice()}",
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                 ),
+
+                // 🔥 CHECKOUT BUTTON
+                Padding(
+                  padding: const EdgeInsets.all(10),
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange,
+                      minimumSize: const Size(double.infinity, 50),
+                    ),
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("Order Placed (Demo)"),
+                        ),
+                      );
+
+                      CartService.clearCart();
+                      setState(() {});
+                    },
+                    child: const Text("Checkout"),
+                  ),
+                )
               ],
             ),
     );

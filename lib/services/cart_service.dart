@@ -1,48 +1,36 @@
-import '../models/cart_model.dart';
+import '../models/product_model.dart';
 
 class CartService {
-  static List<CartItem> cartItems = [];
+  static final List<Product> _cartItems = [];
 
-  static void addToCart(CartItem item) {
-    int index = cartItems.indexWhere((e) => e.id == item.id);
-
-    if (index != -1) {
-      cartItems[index].quantity++;
-    } else {
-      cartItems.add(item);
-    }
+  // ➕ ADD TO CART
+  static void addToCart(Product product) {
+    _cartItems.add(product);
   }
 
-  static void increaseQty(int id) {
-    int index = cartItems.indexWhere((e) => e.id == id);
-    if (index != -1) {
-      cartItems[index].quantity++;
-    }
+  // ❌ REMOVE ITEM
+  static void removeFromCart(Product product) {
+    _cartItems.remove(product);
   }
 
-  static void decreaseQty(int id) {
-    int index = cartItems.indexWhere((e) => e.id == id);
-    if (index != -1) {
-      if (cartItems[index].quantity > 1) {
-        cartItems[index].quantity--;
-      } else {
-        cartItems.removeAt(index);
-      }
-    }
+  // 📦 GET ITEMS
+  static List<Product> getCartItems() {
+    return _cartItems;
   }
 
-  static double getTotal() {
+  // 🧹 CLEAR CART
+  static void clearCart() {
+    _cartItems.clear();
+  }
+
+  // 💰 TOTAL PRICE
+  static double getTotalPrice() {
     double total = 0;
 
-    for (var item in cartItems) {
-      double price = double.tryParse(item.price) ?? 0;
-      total += price * item.quantity;
+    for (var item in _cartItems) {
+      total += double.tryParse(item.price) ?? 0;
     }
 
     return total;
-  }
-
-  static List<CartItem> getCart() {
-    return cartItems;
   }
 }

@@ -3,26 +3,15 @@ class Product {
   final String name;
   final String price;
   final String image;
+  final String description;
+  final int categoryId;
 
   Product({
     required this.id,
     required this.name,
     required this.price,
     required this.image,
+    required this.description,
+    required this.categoryId,
   });
-
-  factory Product.fromJson(Map<String, dynamic> json) {
-    String rawPrice = json['prices']?['price'] ?? "0";
-
-    double finalPrice = (double.tryParse(rawPrice) ?? 0) / 100;
-
-    return Product(
-      id: json['id'] ?? 0,
-      name: json['name'] ?? "",
-      price: finalPrice.toStringAsFixed(0),
-      image: (json['images'] != null && json['images'].isNotEmpty)
-          ? json['images'][0]['src']
-          : "",
-    );
-  }
 }
