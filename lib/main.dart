@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'screens/main_navigation.dart';
-import 'screens/reels_screen.dart';
+import 'features/reels/reels_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -13,7 +13,11 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: MainNavigation(), // 👈 IMPORTANT
+      title: 'THOS',
+      theme: ThemeData(
+        primarySwatch: Colors.purple,
+      ),
+      home: const MainNavigation(),
     );
   }
 }
