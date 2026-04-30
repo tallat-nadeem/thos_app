@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-// ✅ NEW API KEYS (UPDATED)
+// ================= API =================
 const String baseUrl = "https://tallatherbs.com";
 const String consumerKey = "ck_f9144c31d3ab6ca0ec165697a683319b6fb7019d";
 const String consumerSecret = "cs_f4abcecb6c99b76d348f22c520160ce25480cd81";
@@ -11,6 +11,7 @@ void main() {
   runApp(const ThosApp());
 }
 
+// ================= APP =================
 class ThosApp extends StatelessWidget {
   const ThosApp({super.key});
 
@@ -18,121 +19,36 @@ class ThosApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: const HomeScreen(),
       theme: ThemeData.dark(),
+      home: const MainScreen(),
     );
   }
 }
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+// ================= MAIN =================
+class MainScreen extends StatefulWidget {
+  const MainScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<MainScreen> createState() => _MainScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
-  List products = [];
+class _MainScreenState extends State<MainScreen> {
+
+  int index = 0;
   List<Map> cart = [];
-
-  int page = 1;
-  bool isLoading = false;
-  bool hasMore = true;
-
-  final ScrollController _scrollController = ScrollController();
-
-  @override
-  void initState() {
-    super.initState();
-    fetchProducts();
-
-    _scrollController.addListener(() {
-      if (_scrollController.position.pixels >=
-              _scrollController.position.maxScrollExtent - 200 &&
-          !isLoading &&
-          hasMore) {
-        fetchProducts();
-      }
-    });
-  }
-
-  // 🔥 FIXED API CALL (HEADER AUTH)
-  Future fetchProducts() async {
-    if (isLoading || !hasMore) return;
-
-    setState(() => isLoading = true);
-
-    final url =
-        "$baseUrl/wp-json/wc/v3/products?page=$page&per_page=10";
-
-    String basicAuth = 'Basic ' +
-        base64Encode(utf8.encode('$consumerKey:$consumerSecret'));
-
-    try {
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {
-          "Authorization": basicAuth,
-        },
-      );
-
-      print("STATUS: ${response.statusCode}");
-
-      if (response.statusCode == 200) {
-        List data = jsonDecode(response.body);
-
-        if (data.isEmpty) {
-          hasMore = false;
-        } else {
-          setState(() {
-            products.addAll(data);
-            page++;
-          });
-        }
-      } else {
-        print("ERROR: ${response.body}");
-      }
-    } catch (e) {
-      print("ERROR: $e");
-    }
-
-    setState(() => isLoading = false);
-  }
-
-  // 🛒 ADD TO CART
-  void addToCart(product) {
-    int index = cart.indexWhere((e) => e["id"] == product["id"]);
-
-    setState(() {
-      if (index != -1) {
-        cart[index]["qty"] += 1;
-      } else {
-        cart.add({...product, "qty": 1});
-      }
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Added to Cart")),
-    );
-  }
-
-  Widget topIcon(IconData icon, {VoidCallback? onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 4),
-        padding: const EdgeInsets.all(6),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Icon(icon, size: 18),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
+
+    final pages = [
+      HomeScreen(cart: cart),
+      const ReelsScreen(),
+      const WalletScreen(),
+      CartScreen(cart: cart),
+      const UserScreen(),
+    ];
+
     return Scaffold(
       backgroundColor: const Color(0xFF0A0F1C),
 
@@ -144,118 +60,270 @@ class _HomeScreenState extends State<HomeScreen> {
             const Text("THOS"),
             const Spacer(),
 
-            topIcon(Icons.store),
-            topIcon(Icons.video_collection),
-            topIcon(Icons.account_balance_wallet),
+            IconButton(
+              icon: const Icon(Icons.store),
+              onPressed: (){
+                Navigator.push(context,
+                  MaterialPageRoute(builder: (_)=>MarketScreen())
+                );
+              },
+            ),
 
-            topIcon(Icons.shopping_cart, onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => CartScreen(cart: cart),
-                ),
-              );
-            }),
+            IconButton(
+              icon: const Icon(Icons.video_collection),
+              onPressed: ()=>setState(()=>index=1),
+            ),
 
-            topIcon(Icons.person),
-            const SizedBox(width: 6),
-            Image.asset("assets/thos_logo.png", height: 26),
+            IconButton(
+              icon: const Icon(Icons.account_balance_wallet),
+              onPressed: ()=>setState(()=>index=2),
+            ),
+
+            IconButton(
+              icon: const Icon(Icons.shopping_cart),
+              onPressed: ()=>setState(()=>index=3),
+            ),
+
+            IconButton(
+              icon: const Icon(Icons.person),
+              onPressed: ()=>setState(()=>index=4),
+            ),
           ],
         ),
       ),
 
-      body: products.isEmpty && isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : GridView.builder(
-              controller: _scrollController,
-              padding: const EdgeInsets.all(8),
-              itemCount: products.length + 1,
-              gridDelegate:
-                  const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 8,
-                mainAxisSpacing: 8,
-                childAspectRatio: 0.75,
-              ),
-              itemBuilder: (context, index) {
-                if (index == products.length) {
-                  return isLoading
-                      ? const Center(child: CircularProgressIndicator())
-                      : const SizedBox();
-                }
+      body: pages[index],
+    );
+  }
+}
 
-                final product = products[index];
+// ================= HOME (PRODUCTS) =================
+class HomeScreen extends StatefulWidget {
+  final List<Map> cart;
+  const HomeScreen({super.key, required this.cart});
 
-                String imageUrl = "";
-                if (product["images"] != null &&
-                    product["images"].isNotEmpty) {
-                  imageUrl = product["images"][0]["src"];
-                }
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
 
-                return Container(
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF111827),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    children: [
-                      Expanded(
-                        child: imageUrl.isNotEmpty
-                            ? ClipRRect(
-                                borderRadius: const BorderRadius.vertical(
-                                    top: Radius.circular(12)),
-                                child: Image.network(
-                                  imageUrl,
-                                  fit: BoxFit.cover,
-                                  width: double.infinity,
-                                ),
-                              )
-                            : const Icon(Icons.image),
-                      ),
+class _HomeScreenState extends State<HomeScreen> {
 
-                      Padding(
-                        padding: const EdgeInsets.all(6),
-                        child: Column(
-                          children: [
-                            Text(
-                              product["name"] ?? "",
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.center,
-                            ),
+  List products = [];
+  int page = 1;
+  bool loading = false;
+  bool hasMore = true;
 
-                            const SizedBox(height: 4),
+  final controller = ScrollController();
 
-                            Text(
-                              "Rs ${product["price"] ?? "0"}",
-                              style: const TextStyle(
-                                  color: Colors.green,
-                                  fontWeight: FontWeight.bold),
-                            ),
+  @override
+  void initState() {
+    super.initState();
+    fetchProducts();
 
-                            const SizedBox(height: 6),
+    controller.addListener(() {
+      if (controller.position.pixels >=
+          controller.position.maxScrollExtent - 200 &&
+          !loading && hasMore) {
+        fetchProducts();
+      }
+    });
+  }
 
-                            ElevatedButton(
-                              onPressed: () => addToCart(product),
-                              child: const Text("Add"),
-                            )
-                          ],
-                        ),
-                      )
-                    ],
-                  ),
-                );
-              },
-            ),
+  Future fetchProducts() async {
+
+    if (loading || !hasMore) return;
+    loading = true;
+
+    String auth = 'Basic ' +
+        base64Encode(utf8.encode('$consumerKey:$consumerSecret'));
+
+    final res = await http.get(
+      Uri.parse("$baseUrl/wp-json/wc/v3/products?page=$page&per_page=10"),
+      headers: {"Authorization": auth},
+    );
+
+    if (res.statusCode == 200) {
+      List data = jsonDecode(res.body);
+
+      if (data.isEmpty) {
+        hasMore = false;
+      } else {
+        setState(() {
+          products.addAll(data);
+          page++;
+        });
+      }
+    }
+
+    loading = false;
+  }
+
+  void addToCart(product) {
+    int i = widget.cart.indexWhere((e)=>e["id"]==product["id"]);
+
+    setState(() {
+      if(i!=-1){
+        widget.cart[i]["qty"]++;
+      } else {
+        widget.cart.add({...product,"qty":1});
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+
+    return GridView.builder(
+      controller: controller,
+      padding: const EdgeInsets.all(8),
+      itemCount: products.length + 1,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        childAspectRatio: 0.75,
+      ),
+      itemBuilder: (_, i){
+
+        if(i==products.length){
+          return loading
+              ? const Center(child: CircularProgressIndicator())
+              : const SizedBox();
+        }
+
+        var p = products[i];
+        String img = p["images"].isNotEmpty ? p["images"][0]["src"] : "";
+
+        return Card(
+          child: Column(
+            children: [
+              Expanded(child: Image.network(img, fit: BoxFit.cover)),
+              Text(p["name"], maxLines: 2),
+              Text("Rs ${p["price"]}"),
+              ElevatedButton(
+                onPressed: ()=>addToCart(p),
+                child: const Text("Add"),
+              )
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+// ================= MARKETPLACE =================
+class MarketScreen extends StatelessWidget {
+
+  final Map<String, dynamic> categories = {
+
+    "Electronics": {
+      "Mobiles": ["Android", "iPhone"],
+      "Laptops": ["Gaming", "Office"],
+      "Solar": {
+        "New Panels": ["Longi", "JA Solar"],
+        "Used Panels": ["Working Panels"]
+      },
+      "Home Electronics": ["Fans", "AC", "Fridge"]
+    },
+
+    "Fashion": {
+      "Men": ["Clothes", "Shoes"],
+      "Women": {
+        "Boutique": {
+          "Fozia Signatures": ["Ready Made", "Custom Stitching"]
+        }
+      },
+      "Kids": ["Boys Wear", "Girls Wear"]
+    },
+
+    "Household": {
+      "Furniture": ["Beds", "Sofas"],
+      "Kitchen": ["Utensils"]
+    },
+
+    "Agriculture": {
+      "Machines": ["Harvesters"],
+      "Tools": ["Sprayers"]
+    },
+
+    "Robots": {
+      "Industrial": ["Automation"],
+      "Home Robots": ["Cleaning Robot"]
+    },
+
+  };
+
+  @override
+  Widget build(BuildContext context) {
+
+    return Scaffold(
+      appBar: AppBar(title: const Text("Marketplace")),
+
+      body: ListView(
+        children: categories.keys.map((cat){
+
+          return ExpansionTile(
+            title: Text(cat),
+            children: buildSub(context, categories[cat]),
+          );
+
+        }).toList(),
+      ),
+    );
+  }
+
+  List<Widget> buildSub(BuildContext context, dynamic data){
+
+    if(data is List){
+      return data.map<Widget>((e){
+        return ListTile(
+          title: Text(e),
+          onTap: (){
+            Navigator.push(context,
+              MaterialPageRoute(
+                builder: (_)=>ComingSoonScreen(title: e)
+              )
+            );
+          },
+        );
+      }).toList();
+    }
+
+    if(data is Map){
+      return data.keys.map<Widget>((key){
+        return ExpansionTile(
+          title: Text(key),
+          children: buildSub(context, data[key]),
+        );
+      }).toList();
+    }
+
+    return [];
+  }
+}
+
+// ================= COMING SOON =================
+class ComingSoonScreen extends StatelessWidget {
+  final String title;
+  const ComingSoonScreen({super.key, required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+
+    return Scaffold(
+      appBar: AppBar(title: Text(title)),
+      body: const Center(
+        child: Text(
+          "Coming Soon",
+          style: TextStyle(fontSize: 30),
+        ),
+      ),
     );
   }
 }
 
 // ================= CART =================
-
 class CartScreen extends StatefulWidget {
   final List<Map> cart;
-
   const CartScreen({super.key, required this.cart});
 
   @override
@@ -264,99 +332,141 @@ class CartScreen extends StatefulWidget {
 
 class _CartScreenState extends State<CartScreen> {
 
-  double total() {
-    double t = 0;
-    for (var item in widget.cart) {
-      t += (double.tryParse(item["price"].toString()) ?? 0) *
-          item["qty"];
+  double total(){
+    double t=0;
+    for(var i in widget.cart){
+      t += (double.tryParse(i["price"].toString())??0)*i["qty"];
     }
     return t;
   }
 
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
-      appBar: AppBar(title: const Text("Your Cart")),
+      appBar: AppBar(title: const Text("Cart")),
 
       body: widget.cart.isEmpty
-          ? const Center(child: Text("Cart is empty"))
+          ? const Center(child: Text("Empty"))
           : Column(
-              children: [
+        children: [
 
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: widget.cart.length,
-                    itemBuilder: (context, index) {
-                      final item = widget.cart[index];
+          Expanded(
+            child: ListView.builder(
+              itemCount: widget.cart.length,
+              itemBuilder: (_,i){
 
-                      String imageUrl = "";
-                      if (item["images"] != null &&
-                          item["images"].isNotEmpty) {
-                        imageUrl = item["images"][0]["src"];
-                      }
+                var item = widget.cart[i];
 
-                      return ListTile(
-                        leading: imageUrl.isNotEmpty
-                            ? Image.network(imageUrl, width: 50)
-                            : null,
+                return ListTile(
+                  title: Text(item["name"]),
+                  subtitle: Text("Rs ${item["price"]}"),
 
-                        title: Text(item["name"]),
-                        subtitle: Text("Rs ${item["price"]}"),
-
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-
-                            IconButton(
-                              icon: const Icon(Icons.remove),
-                              onPressed: () {
-                                setState(() {
-                                  if (item["qty"] > 1) item["qty"]--;
-                                });
-                              },
-                            ),
-
-                            Text("${item["qty"]}"),
-
-                            IconButton(
-                              icon: const Icon(Icons.add),
-                              onPressed: () {
-                                setState(() {
-                                  item["qty"]++;
-                                });
-                              },
-                            ),
-
-                            IconButton(
-                              icon: const Icon(Icons.delete, color: Colors.red),
-                              onPressed: () {
-                                setState(() {
-                                  widget.cart.removeAt(index);
-                                });
-                              },
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                ),
-
-                Padding(
-                  padding: const EdgeInsets.all(10),
-                  child: Column(
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text("Total: Rs ${total()}"),
 
-                      ElevatedButton(
-                        onPressed: () {},
-                        child: const Text("Checkout"),
-                      )
+                      IconButton(
+                        icon: const Icon(Icons.remove),
+                        onPressed: (){
+                          setState(() {
+                            if(item["qty"]>1) item["qty"]--;
+                          });
+                        },
+                      ),
+
+                      Text("${item["qty"]}"),
+
+                      IconButton(
+                        icon: const Icon(Icons.add),
+                        onPressed: (){
+                          setState(()=>item["qty"]++);
+                        },
+                      ),
+
+                      IconButton(
+                        icon: const Icon(Icons.delete),
+                        onPressed: (){
+                          setState(()=>widget.cart.removeAt(i));
+                        },
+                      ),
                     ],
                   ),
-                )
-              ],
+                );
+              },
             ),
+          ),
+
+          Text("Total: Rs ${total()}"),
+
+          ElevatedButton(
+            onPressed: (){
+              Navigator.push(context,
+                MaterialPageRoute(builder: (_)=>CheckoutScreen(total: total()))
+              );
+            },
+            child: const Text("Checkout"),
+          )
+        ],
+      ),
     );
   }
+}
+
+// ================= CHECKOUT =================
+class CheckoutScreen extends StatelessWidget {
+  final double total;
+  const CheckoutScreen({super.key, required this.total});
+
+  @override
+  Widget build(BuildContext context) {
+
+    return Scaffold(
+      appBar: AppBar(title: const Text("Checkout")),
+
+      body: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          children: [
+
+            TextField(decoration: const InputDecoration(labelText: "Name")),
+            TextField(decoration: const InputDecoration(labelText: "Phone")),
+            TextField(decoration: const InputDecoration(labelText: "Address")),
+
+            const SizedBox(height: 20),
+
+            Text("Total: Rs $total"),
+
+            ElevatedButton(
+              onPressed: (){
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Order Placed")),
+                );
+              },
+              child: const Text("Place Order"),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ================= OTHER =================
+class ReelsScreen extends StatelessWidget {
+  const ReelsScreen({super.key});
+  @override
+  Widget build(BuildContext context)=>const Center(child: Text("Reels Coming Soon"));
+}
+
+class WalletScreen extends StatelessWidget {
+  const WalletScreen({super.key});
+  @override
+  Widget build(BuildContext context)=>const Center(child: Text("Wallet Coming Soon"));
+}
+
+class UserScreen extends StatelessWidget {
+  const UserScreen({super.key});
+  @override
+  Widget build(BuildContext context)=>const Center(child: Text("Login Coming Soon"));
 }
